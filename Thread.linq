@@ -1,4 +1,6 @@
-<Query Kind="Program" />
+<Query Kind="Program">
+  <Namespace>System.Threading.Tasks</Namespace>
+</Query>
 
 /// <summary>
 /// https://threads.whuanle.cn/
@@ -8,43 +10,46 @@
 
 unsafe void Main()
 {
-	var currentThread = Thread.CurrentThread;
-	Console.WriteLine("线程标识：" + currentThread.Name);
-	Console.WriteLine("当前地域：" + currentThread.CurrentCulture.Name);
-	Console.WriteLine("线程执行状态：" + currentThread.IsAlive);
-	Console.WriteLine("是否为后台线程：" + currentThread.IsBackground);
-	Console.WriteLine("是否为线程池线程" + currentThread.IsThreadPoolThread);
-	
-	string myParam = "abcdef";
-	ParameterizedThreadStart parameterized = new ParameterizedThreadStart(OneTest);
-	Thread thread = new Thread(parameterized);
-	thread.Start(myParam);
-
-	Thread thread1 = new Thread(() =>
+	// 定义两个任务
+	Task task1 = new Task(() =>
 	{
-		Console.WriteLine("启用线程1");
+		Console.WriteLine("① 开始执行");
+		Thread.Sleep(TimeSpan.FromSeconds(1));
+
+		Console.WriteLine("① 执行中");
+		Thread.Sleep(TimeSpan.FromSeconds(1));
+
+		Console.WriteLine("① 执行即将结束");
 	});
-	thread1.Start();
 
-	var thread3 = new Thread(Print);
-	Console.WriteLine("开始执行线程 B");
-
-	thread3.Start();
-
-	// 开始等待另一个完成完成
-	thread3.Join();
-	Console.WriteLine("线程 B 已经完成");
-
-	Console.WriteLine("结构体大小" + sizeof(Test));
-	new Thread(() =>
-	   {
-	   		Console.WriteLine("执行StackOver");
-			StackOver();
-			Console.WriteLine("StackOver执行完毕");
-	   }, 64 * 1024).Start();
+	Task task2 = new Task(MyTask);
+	// 开始任务
+	task1.Start();
+	task2.Start();
 }
 
 // You can define other methods, fields, classes and namespaces here
+
+private static void MyTask()
+{
+	Console.WriteLine("② 开始执行");
+	Thread.Sleep(TimeSpan.FromSeconds(1));
+
+	Console.WriteLine("② 执行中");
+	Thread.Sleep(TimeSpan.FromSeconds(1));
+
+	Console.WriteLine("② 执行即将结束");
+}
+
+
+private static int sum = 0;
+public static void AddOne()
+{
+	for (int i = 0; i < 100_0000; i++)
+	{
+		Interlocked.Add(ref sum,1);
+	}
+}
 
 public static void Print()
 {
@@ -74,7 +79,7 @@ public static System.Threading.ThreadState GetThreadState(System.Threading.Threa
 
 static unsafe void StackOver()
 {
-	Test* test = stackalloc Test[750];         // 729 不会导致堆栈溢出
+	Test* test = stackalloc Test[730];         // 729 不会导致堆栈溢出
 }
 
 public struct Test
