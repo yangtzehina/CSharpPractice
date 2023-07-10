@@ -10,22 +10,87 @@
 
 unsafe void Main()
 {
-	// 定义两个任务
-	Task task1 = new Task(() =>
+	// 实例化任务类
+	MyTaskClass<string> myTask1 = new MyTaskClass<string>(() =>
 	{
-		Console.WriteLine("① 开始执行");
 		Thread.Sleep(TimeSpan.FromSeconds(1));
-
-		Console.WriteLine("① 执行中");
-		Thread.Sleep(TimeSpan.FromSeconds(1));
-
-		Console.WriteLine("① 执行即将结束");
+		return "www.whuanle.cn";
 	});
 
-	Task task2 = new Task(MyTask);
-	// 开始任务
-	task1.Start();
-	task2.Start();
+	// 直接同步获取结果
+	Console.WriteLine(myTask1.GetResult());
+
+
+	// 实例化任务类
+	MyTaskClass<string> myTask2 = new MyTaskClass<string>(() =>
+	{
+		Thread.Sleep(TimeSpan.FromSeconds(1));
+		return "www.whuanle.cn";
+	});
+
+	// 异步获取结果
+	myTask2.RunAsync();
+
+	Console.WriteLine(myTask2.Result);
+
+}
+
+/// <summary>
+/// 实现同步任务和异步任务的类型
+/// </summary>
+/// <typeparam name="TResult"></typeparam>
+public class MyTaskClass<TResult>
+{
+	private readonly TaskCompletionSource<TResult> source = new TaskCompletionSource<TResult>();
+	private Task<TResult> task;
+	// 保存用户需要执行的任务
+	private Func<TResult> _func;
+
+	// 是否已经执行完成，同步或异步执行都行
+	private bool isCompleted = false;
+	// 任务执行结果
+	private TResult _result;
+
+	/// <summary>
+	/// 获取执行结果
+	/// </summary>
+	public TResult Result
+	{
+		get
+		{
+			if (isCompleted)
+				return _result;
+			else return task.Result;
+		}
+	}
+	public MyTaskClass(Func<TResult> func)
+	{
+		_func = func;
+		task = source.Task;
+	}
+
+	/// <summary>
+	/// 同步方法获取结果
+	/// </summary>
+	/// <returns></returns>
+	public TResult GetResult()
+	{
+		_result = _func.Invoke();
+		isCompleted = true;
+		return _result;
+	}
+
+	/// <summary>
+	/// 异步执行任务
+	/// </summary>
+	public void RunAsync()
+	{
+		Task.Factory.StartNew(() =>
+		{
+			source.SetResult(_func.Invoke());
+			isCompleted = true;
+		});
+	}
 }
 
 // You can define other methods, fields, classes and namespaces here
